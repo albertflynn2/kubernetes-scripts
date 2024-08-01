@@ -11,7 +11,7 @@ for ns in $namespaces; do
     # Check the status of the pod
     status=$(kubectl get pod $pod -n $ns -o jsonpath='{.status.phase}')
 
-    if [[ "$status" != "Running" && "$status" != "Succeeded" ]]; then
+    if [ "$status" != "Running" ] && [ "$status" != "Succeeded" ]; then
       echo "Pod $pod in namespace $ns is in $status state. Checking events for issues."
 
       # Get pod events
@@ -32,7 +32,7 @@ for ns in $namespaces; do
 
           # Check if the pod is still not running after scaling
           new_status=$(kubectl get pod $pod -n $ns -o jsonpath='{.status.phase}')
-          if [[ "$new_status" != "Running" && "$new_status" != "Succeeded" ]]; then
+          if [ "$new_status" != "Running" ] && [ "$new_status" != "Succeeded" ]; then
             echo "Pod $pod in namespace $ns is still in $new_status state after scaling. Investigating further."
 
             # Describe the pod
@@ -68,7 +68,7 @@ for ns in $namespaces; do
   dns_pods=$(kubectl get pods -n kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].metadata.name}')
   for dns_pod in $dns_pods; do
     dns_status=$(kubectl get pod $dns_pod -n kube-system -o jsonpath='{.status.phase}')
-    if [[ "$dns_status" != "Running" ]]; then
+    if [ "$dns_status" != "Running" ]; then
       echo "DNS pod $dns_pod in namespace kube-system is in $dns_status state."
       # Restart the DNS pod
       kubectl delete pod $dns_pod -n kube-system
@@ -80,7 +80,7 @@ for ns in $namespaces; do
   for deployment in $deployments; do
     replicas=$(kubectl get deployment $deployment -n $ns -o jsonpath='{.status.replicas}')
     available_replicas=$(kubectl get deployment $deployment -n $ns -o jsonpath='{.status.availableReplicas}')
-    if [[ "$replicas" -ne "$available_replicas" ]]; then
+    if [ "$replicas" -ne "$available_replicas" ]; then
       echo "Deployment $deployment in namespace $ns has issues with replicas."
       # Rollout restart the deployment
       kubectl rollout restart deployment $deployment -n $ns
