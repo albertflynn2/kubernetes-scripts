@@ -26,9 +26,16 @@ for ns in $namespaces; do
 
         if [ -n "$deployment" ]; then
           # Scale down to 0
-          kubectl scale deployment $deployment -n $ns --replicas=0
+          if ! kubectl scale deployment $deployment -n $ns --replicas=0; then
+            echo "Failed to scale down deployment $deployment in namespace $ns."
+            continue
+          fi
+
           # Scale up to 1
-          kubectl scale deployment $deployment -n $ns --replicas=1
+          if ! kubectl scale deployment $deployment -n $ns --replicas=1; then
+            echo "Failed to scale up deployment $deployment in namespace $ns."
+            continue
+          fi
 
           # Check if scaling succeeded
           sleep 10
@@ -37,10 +44,16 @@ for ns in $namespaces; do
             echo "Scaling failed for pod $pod. Terminating and restarting."
 
             # Terminate the pod
-            kubectl delete pod $pod -n $ns
+            if ! kubectl delete pod $pod -n $ns; then
+              echo "Failed to delete pod $pod in namespace $ns."
+              continue
+            fi
 
             # Restart the deployment
-            kubectl rollout restart deployment $deployment -n $ns
+            if ! kubectl rollout restart deployment $deployment -n $ns; then
+              echo "Failed to restart deployment $deployment in namespace $ns."
+              continue
+            fi
           fi
         else
           echo "No deployment found for pod $pod in namespace $ns."
