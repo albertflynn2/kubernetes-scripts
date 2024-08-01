@@ -29,6 +29,19 @@ for ns in $namespaces; do
           kubectl scale deployment $deployment -n $ns --replicas=0
           # Scale up to 1
           kubectl scale deployment $deployment -n $ns --replicas=1
+
+          # Check if scaling succeeded
+          sleep 10
+          new_status=$(kubectl get pod $pod -n $ns -o jsonpath='{.status.phase}')
+          if [ "$new_status" != "Running" ]; then
+            echo "Scaling failed for pod $pod. Terminating and restarting."
+
+            # Terminate the pod
+            kubectl delete pod $pod -n $ns
+
+            # Restart the deployment
+            kubectl rollout restart deployment $deployment -n $ns
+          fi
         else
           echo "No deployment found for pod $pod in namespace $ns."
         fi
