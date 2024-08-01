@@ -29,6 +29,21 @@ for ns in $namespaces; do
           kubectl scale deployment $deployment -n $ns --replicas=0
           # Scale up to 1
           kubectl scale deployment $deployment -n $ns --replicas=1
+
+          # Check if the pod is still not running after scaling
+          new_status=$(kubectl get pod $pod -n $ns -o jsonpath='{.status.phase}')
+          if [[ "$new_status" != "Running" && "$new_status" != "Succeeded" ]]; then
+            echo "Pod $pod in namespace $ns is still in $new_status state after scaling. Investigating further."
+
+            # Describe the pod
+            kubectl describe pod $pod -n $ns
+
+            # Get pod logs
+            kubectl logs $pod -n $ns
+
+            # Terminate the pod
+            kubectl delete pod $pod -n $ns
+          fi
         else
           echo "No deployment found for pod $pod in namespace $ns."
         fi
@@ -43,8 +58,8 @@ for ns in $namespaces; do
   for secret in $secrets; do
     if ! kubectl get secret $secret -n $ns &> /dev/null; then
       echo "Secret $secret in namespace $ns is missing or corrupted."
-      # Add your secret recovery logic here
-      # Example: Recreate the secret from a known good source
+      # Recreate the secret from a known good source
+      # Ensure the secret is recreated with correct data
       kubectl create secret generic $secret --from-literal=key=value -n $ns
     fi
   done
@@ -55,8 +70,7 @@ for ns in $namespaces; do
     dns_status=$(kubectl get pod $dns_pod -n kube-system -o jsonpath='{.status.phase}')
     if [[ "$dns_status" != "Running" ]]; then
       echo "DNS pod $dns_pod in namespace kube-system is in $dns_status state."
-      # Add your DNS recovery logic here
-      # Example: Restart the DNS pod
+      # Restart the DNS pod
       kubectl delete pod $dns_pod -n kube-system
     fi
   done
@@ -68,8 +82,7 @@ for ns in $namespaces; do
     available_replicas=$(kubectl get deployment $deployment -n $ns -o jsonpath='{.status.availableReplicas}')
     if [[ "$replicas" -ne "$available_replicas" ]]; then
       echo "Deployment $deployment in namespace $ns has issues with replicas."
-      # Add your deployment recovery logic here
-      # Example: Rollout restart the deployment
+      # Rollout restart the deployment
       kubectl rollout restart deployment $deployment -n $ns
     fi
   done

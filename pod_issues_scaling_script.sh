@@ -11,7 +11,7 @@ for ns in $namespaces; do
     # Check the status of the pod
     status=$(kubectl get pod $pod -n $ns -o jsonpath='{.status.phase}')
 
-    if [[ "$status" != "Running" && "$status" != "Succeeded" ]]; then
+    if [ "$status" != "Running" ] && [ "$status" != "Succeeded" ]; then
       echo "Pod $pod in namespace $ns is in $status state. Checking events for issues."
 
       # Get pod events
