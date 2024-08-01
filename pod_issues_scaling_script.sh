@@ -18,7 +18,7 @@ for ns in $namespaces; do
       events=$(kubectl get events --field-selector involvedObject.name=$pod -n $ns -o jsonpath='{range .items[*]}{.message}{"\n"}{end}')
 
       # Check for specific issues in events
-      if echo "$events" | grep -q -E "Failed|Error|CrashLoopBackOff"; then
+      if echo "$events" | grep -q -E "Failed|Error|CrashLoopBackOff|Pending|Unknown"; then
         echo "Issues found in events for pod $pod. Scaling up and down."
 
         # Get the deployment name
